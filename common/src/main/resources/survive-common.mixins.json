@@ -1,0 +1,32 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.stereowalker.survive.mixins",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "Survive-refmap.json",
+  "mixins": [
+  	"AbstractVillagerMixin",
+  	"PlayerMixin",
+  	"FoodDataMixin",
+  	"BlockMixin",
+  	"ServerPlayerGameModeMixin",
+	"CampfireBlockMixin",
+	"LayeredCauldronBlockMixin",
+	"LivingEntityMixin",
+	"EntityMixin",
+	"CowMixin",
+	"PigMixin",
+	"IceBlockMixin",
+	"MobEffectMixin",
+	"WrittenBookItemMixin",
+	"BottleItemMixin"
+  ],
+  "client": [
+  	"client.GuiMixin",
+  	"client.AbstractClientPlayerMixin",
+  	"client.LocalPlayerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

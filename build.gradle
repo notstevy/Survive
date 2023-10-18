@@ -1,228 +1,51 @@
 plugins {
-	id 'eclipse'
-    id 'maven-publish'
-    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
-    id 'org.parchmentmc.librarian.forgegradle' version '1.+'
-    id 'org.spongepowered.mixin' version '0.7.+'
-    id "com.matthewprenger.cursegradle" version "1.4.0"
-	id "com.modrinth.minotaur" version "2.+"
+    id "architectury-plugin" version "3.4-SNAPSHOT"
+    id "dev.architectury.loom" version "1.1-SNAPSHOT" apply false
 }
 
-mixin {
-    add sourceSets.main, "${modFilename}-refmap.json"
-    config "${modId}.mixins.json"
+architectury {
+    minecraft = rootProject.modMinecraftVersion
 }
 
-version = modMinecraftVersion + "-" +modVersion
-group = modGroup
-archivesBaseName = modFilename
+subprojects {
+    apply plugin: "dev.architectury.loom"
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
-
-println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ') Arch: ' + System.getProperty('os.arch'))
-println('Mod Name: ' + modFilename + ', Mod Version: ' + modVersion + ', Minecraft Version: ' + modMinecraftVersion + ', '+modLoader+' Version: ' + modLoaderVersion)
-
-minecraft {
-    mappings channel: mappingsChannel, version: mappingsVersion
-    //makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
-    accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
-    runs {
-        client {
-            workingDirectory project.file('run/client')
-            property 'forge.logging.markers', 'REGISTRIES'
-            // Recommended logging level for the console
-            property 'forge.logging.console.level', 'debug'
-            property 'mixin.env.remapRefMap', 'true'
-			property 'mixin.env.refMapRemappingFile', "${buildDir}/createSrgToMcp/output.srg"
-			args '--username', 'Stereowalker', '--uuid', "$System.env.MINECRAFTUUIDSTEREOWALKER"
-
-            mods {
-                "${modId}" {
-                    source sourceSets.main
-                }
-            }
-        }
-
-        server {
-            workingDirectory project.file('run/server')
-            property 'forge.logging.markers', 'REGISTRIES'
-            // Recommended logging level for the console
-            property 'forge.logging.console.level', 'debug'
-            property 'mixin.env.remapRefMap', 'true'
-			property 'mixin.env.refMapRemappingFile', "${buildDir}/createSrgToMcp/output.srg"
-			
-            mods {
-                "${modId}" {
-                    source sourceSets.main
-                }
-            }
-        }
-    }
-}
-
-sourceSets.main.resources { srcDir 'src/generated/resources' }
-
-repositories {
-	//maven {url = "https://dvs1.progwml6.com/files/maven/"}// JEI
-	maven {url "https://modmaven.dev/" }// UnionLib
-	maven {url = "https://maven.theillusivec4.top/"}
-	maven {url 'https://maven.blamejared.com'}
-	maven {url "https://www.cursemaven.com"}
-    maven {url = "https://repo.spongepowered.org/maven"} // mixin
-    maven {url "https://maven.shedaniel.me/"} // cloth config
-}
-
-dependencies {
-	minecraft 'net.minecraftforge:forge:' + modMinecraftVersion + '-' + modLoaderVersion
-	annotationProcessor "org.spongepowered:mixin:${modMixinVersion}:processor"
-	implementation "org.spongepowered:mixin:${modMixinVersion}"
-	implementation fileTree(include: ['*.jar'], dir: 'libs')
-	implementation fg.deobf("com.stereowalker.unionlib:UnionLib:"+modMinecraftVersion+"-"+unionLibVersion+"-"+modLoader+"")
-	
-	compileOnly fg.deobf("mezz.jei:jei-${modMinecraftVersion}-common-api:"+jeiVersion)
-	compileOnly fg.deobf("mezz.jei:jei-${modMinecraftVersion}-forge-api:"+jeiVersion)
-	compileOnly fg.deobf("com.stereowalker.combat:C.O.M.B.A.T:1.18.2"+/*modMinecraftVersion+*/"-"+combatVersion+":api")
-    //compileOnly fg.deobf("top.theillusivec4.caelus:caelus-forge:"+modMinecraftVersion+"-"+caelusVersion+"") 
-    compileOnly fg.deobf("vazkii.patchouli:Patchouli:${modMinecraftVersion}-${patchouliVersion}-FORGE:api")
-	
-	runtimeOnly fg.deobf("mezz.jei:jei-${modMinecraftVersion}-forge:"+jeiVersion+"")
-	//runtimeOnly fg.deobf("top.theillusivec4.caelus:caelus-forge:"+modMinecraftVersion+"-"+caelusVersion+"") 
-    runtimeOnly fg.deobf("vazkii.patchouli:Patchouli:${modMinecraftVersion}-${patchouliVersion}-FORGE")
-	
-	implementation fg.deobf("curse.maven:biomes-o-plenty-220318:"+bopID)
-    implementation fg.deobf("com.github.glitchfiend:TerraBlender-forge:${modMinecraftVersion}-3.0.0.164")
-	implementation fg.deobf("curse.maven:serene-seasons-291874:"+sereneSeasonsID)
-	//implementation fg.deobf("curse.maven:origins-474438:"+originsID)
-	//implementation fg.deobf("curse.maven:create-328085:"+createID)
-	//implementation fg.deobf("curse.maven:flywheel-486392:"+flywheelID)
-}
-
-// Example for how to get properties into the manifest for reading by the runtime..
-jar {
-    manifest {
-        attributes([
-            "Specification-Title": modFilename,
-            "Specification-Vendor": "Stereowalker",
-            "Specification-Version": "1",
-            "Implementation-Title": project.name,
-            "Implementation-Version": "${version}",
-            "Implementation-Vendor" :"Stereowalker",
-            "MixinConfigs": modId+".mixins.json",
-            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
-        ])
-    }
-}
-
-task sourcesJar(type: Jar) {
-    from sourceSets.main.allJava
-    from (sourceSets.main.output) {
-        include 'LICENSE.txt'
+    loom {
+        silentMojangMappingsLicense()
     }
 
-    archiveClassifier = 'sources'
-}
-
-task deobfJar(type: Jar) {
-	from sourceSets.main.output
-	archiveClassifier = "deobf"
-}
-
-
-task apiJar(type: Jar) {
-    from(sourceSets.main.allJava) {
-        include 'com/stereowalker/survive/api/**'
-    }
-    from (sourceSets.main.output) {
-        include 'com/stereowalker/survive/api/**'
-    }
-	archiveClassifier = 'api'
-}
-
-curseforge {
-    project {
-    	id = modCurseId
-		apiKey = "$System.env.CURSEFORGEKEY"
-		changelog = file('changelog.md')
-		changelogType = "markdown"
-		releaseType = 'release'
-		addGameVersion(modMinecraftVersion)
-		addGameVersion("1.20")
-        addGameVersion("Forge")
-		relations {
-      		requiredDependency 'unionlib'
-		}	
-		mainArtifact(jar) {
-			displayName = modFilename+"-$project.version"
-		}
-		addArtifact sourcesJar
-	}
-	options {
-    	debug = false // defaults to false
-  	}		
-}
-
-
-modrinth {
-    token = "$System.env.MODRINTH_TOKEN"
-    projectId = modId
-    versionNumber = "${project.version}"
-    versionType = "release"
-    uploadFile = jar
-    gameVersions = [modMinecraftVersion, "1.20"]
-    loaders = ["${project.modLoader}".toLowerCase()]
-	changelog = file('changelog.md').text
     dependencies {
-        required.project "unionlib"
-    }
-}
-task uploadToAllSites {
-    uploadToAllSites.dependsOn curseforge
-    uploadToAllSites.dependsOn modrinth
-    uploadToAllSites.dependsOn publish
-}
-
-// Example configuration to allow publishing using the maven-publish task
-// we define a custom artifact that is sourced from the reobfJar output task
-// and then declare that to be published
-// Note you'll need to add a repository here
-//def reobfFile = file("$buildDir/reobfJar/output.jar")
-//def reobfArtifact = artifacts.add('default', reobfFile) {
-//    type 'jar'
-//    builtBy 'reobfJar'
-//}
-jar.finalizedBy('reobfJar')
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-        	afterEvaluate {
-                artifact project.jar
-                artifact project.apiJar
-                artifact project.sourcesJar
-            }
-        
-        	groupId = project.group
-			artifactId = project.archivesBaseName
-			version = project.version
+        minecraft "com.mojang:minecraft:${rootProject.modMinecraftVersion}"
+        mappings loom.layered() {
+            officialMojangMappings()
+            parchment("org.parchmentmc.data:parchment-${rootProject.modMinecraftVersion}:${rootProject.mappingsVersion}@zip")
         }
     }
+}
+
+allprojects {
+    apply plugin: "java"
+
+    apply plugin: "architectury-plugin"
+    apply plugin: "maven-publish"
+
+    archivesBaseName = rootProject.archivesBaseName
+    version = rootProject.modVersion
+    group = rootProject.modGroup
+
     repositories {
         maven {
-            name = "modmaven"
-			credentials {
-				username "$System.env.ARTIFACTORYUSER"
-				password "$System.env.ARTIFACTORYPASS"
-			}
-			url = "https://modmaven.dev/artifactory/local-releases/"
+            name = 'ParchmentMC'
+            url = 'https://maven.parchmentmc.org'
         }
     }
-}
 
-tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
-}
+    tasks.withType(JavaCompile) {
+        options.encoding = "UTF-8"
+        options.release = 17
+    }
 
-artifacts {
-	archives sourcesJar
-	archives deobfJar
-	archives apiJar
+    java {
+        withSourcesJar()
+    }
 }
