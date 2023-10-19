@@ -49,13 +49,13 @@ public class TemperatureModifier {
 		this.mod = nbt.getDouble("mod");
 		this.factor = nbt.getInt("factor") >= ContributingFactor.values().length ? ContributingFactor.INTERNAL : ContributingFactor.values()[nbt.getInt("factor")];
 	}
-	
+
 	/**
 	 * It's more advisable to use the method from {@linkTemperatureStats}
 	 * @param modifier
 	 */
-	public TemperatureModifier setMod(double mod) {
-		this.mod = UnionMathHelper.roundDecimal(3, mod);
+	public TemperatureModifier setMod(double modifier) {
+		this.mod = UnionMathHelper.roundDecimal(3, modifier);
 		return this;
 	}
 	

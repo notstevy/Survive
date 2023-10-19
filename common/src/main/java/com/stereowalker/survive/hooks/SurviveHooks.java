@@ -1,21 +1,39 @@
 package com.stereowalker.survive.hooks;
 
-import com.stereowalker.survive.api.event.TemperatureModifierSetEvent;
+import com.stereowalker.survive.api.event.SurviveEvent;
 import com.stereowalker.survive.world.temperature.TemperatureModifier;
 
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.common.MinecraftForge;
+import org.jetbrains.annotations.NotNull;
 
 public class SurviveHooks {
 
 	public static TemperatureModifier getTemperatureModifer(LivingEntity entity, TemperatureModifier originalModifier)
 	{
-		TemperatureModifierSetEvent event = new TemperatureModifierSetEvent(originalModifier);
-		if (MinecraftForge.EVENT_BUS.post(event))
-		{
-			return originalModifier.setMod(0);
+
+		class TemperatureModifierResultImpl implements SurviveEvent.TemperatureModifierResult {
+			private TemperatureModifier temperatureModifier;
+
+			private TemperatureModifierResultImpl(@NotNull TemperatureModifier originalModifier) {
+				this.temperatureModifier = originalModifier;
+			}
+
+			@Override
+			public @NotNull TemperatureModifier get() {
+				return temperatureModifier;
+			}
+
+			@Override
+			public void set(@NotNull TemperatureModifier temperatureModifier) {
+				this.temperatureModifier = temperatureModifier;
+			}
 		}
-		return event.getModifier();
+
+		TemperatureModifierResultImpl result = new TemperatureModifierResultImpl(originalModifier);
+		SurviveEvent.TEMPERATURE_MODIFIER_SET.invoker()
+				.setModifier(result);
+
+		return result.get();
 	}
 }
 
