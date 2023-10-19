@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class SurviveHooks {
 
-	public static TemperatureModifier getTemperatureModifer(LivingEntity entity, TemperatureModifier originalModifier)
+	public static TemperatureModifier getTemperatureModifier(TemperatureModifier originalModifier)
 	{
 
 		class TemperatureModifierResultImpl implements SurviveEvent.TemperatureModifierResult {
