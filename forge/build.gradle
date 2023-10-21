@@ -27,9 +27,16 @@ configurations {
     developmentForge.extendsFrom common
 }
 
+repositories {
+    maven { url "https://www.cursemaven.com" }
+    maven { url "https://modmaven.dev/" } // UnionLib
+}
+
 dependencies {
     forge "net.minecraftforge:forge:${rootProject.modMinecraftVersion}-${rootProject.forgeVersion}"
     modApi "dev.architectury:architectury-forge:${rootProject.architecturyVersion}"
+    modApi "curse.maven:serene-seasons-291874:${rootProject.sereneSeasonsID}"
+    modApi "com.stereowalker.unionlib:UnionLib:${rootProject.modMinecraftVersion}-${rootProject.unionLibVersion}-Forge"
 
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: ":common", configuration: "transformProductionForge")) { transitive = false }

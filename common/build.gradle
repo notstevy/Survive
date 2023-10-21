@@ -8,6 +8,11 @@ loom {
 
 repositories {
     maven { url "https://modmaven.dev/" } // UnionLib
+    maven { url "https://www.cursemaven.com" }
+    maven {
+        name = "Fuzs Mod Resources"
+        url = "https://raw.githubusercontent.com/Fuzss/modresources/main/maven/"
+    }
 }
 
 dependencies {
@@ -15,8 +20,11 @@ dependencies {
     // Do NOT use other classes from fabric loader
     modImplementation "net.fabricmc:fabric-loader:${rootProject.fabricLoaderVersion}"
     modApi "dev.architectury:architectury:${rootProject.architecturyVersion}"
-    
-    modImplementation "com.stereowalker.unionlib:UnionLib:${rootProject.modMinecraftVersion}-${rootProject.unionLibVersion}-Forge"
+
+    // We depend on unionlib-forge here to use the universal config api and there isn't a common module sadly
+    modApi "com.stereowalker.unionlib:UnionLib:${rootProject.modMinecraftVersion}-${rootProject.unionLibVersion}-Forge"
+    api "mezz.jei:jei-${rootProject.modMinecraftVersion}-common-api:${rootProject.jeiVersion}"
+    api "fuzs.forgeconfigapiport:forgeconfigapiport-common:${rootProject.forgeConfigApiVersion}"
 }
 
 publishing {

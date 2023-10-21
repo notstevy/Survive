@@ -10,24 +10,29 @@ import com.stereowalker.survive.world.DataMaps;
 import com.stereowalker.survive.world.temperature.conditions.TemperatureChangeInstance;
 import com.stereowalker.unionlib.util.RegistryHelper;
 
+import dev.architectury.event.events.client.ClientTooltipEvent;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.EquipmentSlot.Type;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.event.entity.player.ItemTooltipEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.minecraft.world.item.TooltipFlag;;
 
 @Environment(EnvType.CLIENT)
-@EventBusSubscriber(modid = "survive", value = Dist.CLIENT)
 public class TooltipEvents {
 
+	public static void register() {
+		ClientTooltipEvent.ITEM.register(TooltipEvents::tooltips);
+	}
+
+
 	@Environment(EnvType.CLIENT)
-	public static void accessoryTooltip(Player player, ItemStack stack, List<Component> tooltip, boolean displayWeight, boolean displayTemp) {
+	private static void accessoryTooltip(Player player, ItemStack stack, List<Component> tooltip, boolean displayWeight, boolean displayTemp) {
 		List<Component> tooltipsToAdd = new ArrayList<Component>();
 		if (DataMaps.Client.armor.containsKey(RegistryHelper.items().getKey(stack.getItem()))) {
 			float kg = WeightHandler.getArmorWeightClient(stack);
@@ -49,18 +54,17 @@ public class TooltipEvents {
 			if (displayWeight) tooltipsToAdd.add(Component.translatable("tooltip.survive.weight", 0, Survive.STAMINA_CONFIG.displayWeightInPounds ? "lbs" : "kg").withStyle(ChatFormatting.DARK_PURPLE));
 			if (displayTemp) tooltipsToAdd.add(Component.translatable("tooltip.survive.temperature", 0).withStyle(ChatFormatting.DARK_PURPLE));
 		}
-		
+
 		tooltip.addAll(1, tooltipsToAdd);
 	}
 
-	@Environment(EnvType.CLIENT)
-	@SubscribeEvent
-	public static void tooltips(ItemTooltipEvent event) {
+	private static void tooltips(ItemStack itemStack, List<Component> components, TooltipFlag tooltipFlag) {
+		Player player = Minecraft.getInstance().player;
 		boolean showWeight = false;
 		boolean showTemp = false;
-		if ((Survive.STAMINA_CONFIG.enabled && Survive.STAMINA_CONFIG.enable_weights) || Survive.TEMPERATURE_CONFIG.enabled) {
+		if (player != null && (Survive.STAMINA_CONFIG.enabled && Survive.STAMINA_CONFIG.enable_weights) || Survive.TEMPERATURE_CONFIG.enabled) {
 			for(EquipmentSlot type : EquipmentSlot.values()) {
-				if (event.getEntity() != null && event.getItemStack().canEquip(type, event.getEntity()) && type.getType() == Type.ARMOR) {
+				if (type.getType() == Type.ARMOR && Mob.getEquipmentSlotForItem(itemStack) == type) {
 					showWeight = Survive.STAMINA_CONFIG.enabled && Survive.STAMINA_CONFIG.enable_weights;
 					showTemp = Survive.TEMPERATURE_CONFIG.enabled;
 					break;
@@ -69,7 +73,7 @@ public class TooltipEvents {
 		}
 
 		if (showWeight || showTemp) {
-			accessoryTooltip(event.getEntity(), event.getItemStack(), event.getToolTip(), showWeight, showTemp);
+			accessoryTooltip(player, itemStack, components, showWeight, showTemp);
 		}
 	}
 }

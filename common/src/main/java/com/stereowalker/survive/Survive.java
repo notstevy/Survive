@@ -1,11 +1,18 @@
 package com.stereowalker.survive;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
+import com.google.common.base.Suppliers;
+import dev.architectury.platform.Platform;
+import dev.architectury.registry.registries.RegistrarManager;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import org.apache.commons.lang3.tuple.Pair;
 
 import com.google.common.collect.Lists;
@@ -95,98 +102,64 @@ import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.entries.LootPoolEntryContainer;
 import net.minecraft.world.level.storage.loot.entries.LootTableReference;
 import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
-import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.registries.ForgeRegistries;
+import org.apache.logging.log4j.Logger;
 
-@Mod(value = "survive")
-public class Survive extends MinecraftMod implements PacketHolder {
+public interface Survive extends PacketHolder {
 
-	public static final float DEFAULT_TEMP = 37.0F;
-	public static final int PURIFIED_WATER_COLOR = 0x41d3f8;
-	public static Map<Potion,List<Fluid>> POTION_FLUID_MAP;
-	public static final String MOD_ID = "survive";
+	String MOD_ID = "survive";
+	float DEFAULT_TEMP = 37.0F;
+	int PURIFIED_WATER_COLOR = 0x41d3f8;
+	Config CONFIG = new Config();
+	StaminaConfig STAMINA_CONFIG = new StaminaConfig();
+	HygieneConfig HYGIENE_CONFIG = new HygieneConfig();
+	TemperatureConfig TEMPERATURE_CONFIG = new TemperatureConfig();
+	ThirstConfig THIRST_CONFIG = new ThirstConfig();
+	WellbeingConfig WELLBEING_CONFIG = new WellbeingConfig();
+	ItemConsummableDataManager consummableReloader = new ItemConsummableDataManager();
+	PotionDrinkDataManager potionReloader = new PotionDrinkDataManager();
+	ArmorDataManager armorReloader = new ArmorDataManager();
+	BlockDataManager blockReloader = new BlockDataManager();
+	BiomeDataManager biomeReloader = new BiomeDataManager();
+	EntityTemperatureDataManager entityReloader = new EntityTemperatureDataManager();
+	FluidDataManager fluidReloader = new FluidDataManager();
+	Supplier<RegistrarManager> MANAGER = Suppliers.memoize(() -> RegistrarManager.get(MOD_ID));
 
-	public static final Config CONFIG = new Config();
-	public static final StaminaConfig STAMINA_CONFIG = new StaminaConfig();
-	public static final HygieneConfig HYGIENE_CONFIG = new HygieneConfig();
-	public static final TemperatureConfig TEMPERATURE_CONFIG = new TemperatureConfig();
-	public static final ThirstConfig THIRST_CONFIG = new ThirstConfig();
-	public static final WellbeingConfig WELLBEING_CONFIG = new WellbeingConfig();
-
-	public static boolean isPrimalWinterLoaded;
-	public static final ItemConsummableDataManager consummableReloader = new ItemConsummableDataManager();
-	public static final PotionDrinkDataManager potionReloader = new PotionDrinkDataManager();
-	public static final ArmorDataManager armorReloader = new ArmorDataManager();
-	public static final BlockDataManager blockReloader = new BlockDataManager();
-	public static final BiomeDataManager biomeReloader = new BiomeDataManager();
-	public static final EntityTemperatureDataManager entityReloader = new EntityTemperatureDataManager();
-	public static final FluidDataManager fluidReloader = new FluidDataManager();
-	private static Survive instance;
-
-	public static boolean isCombatLoaded() {
-		return ModList.get().isLoaded("combat");
+	static boolean isCombatLoaded() {
+		return Platform.isModLoaded("combat");
 	}
-	public static boolean isOriginsLoaded() {
-		return ModList.get().isLoaded("origins");
+	static boolean isOriginsLoaded() {
+		return Platform.isModLoaded("origins");
 	}
-
-	public Survive() 
-	{
-		super("survive", () -> new SurviveClientSegment(), () -> new ServerSegment());
-		instance = this;
-		eventBus().addListener(this::clientRegistries);
-		eventBus().addListener((Consumer<RegisterGuiOverlaysEvent>) event -> {
-			GuiHelper.registerOverlays(event);
-		});
-		//		MinecraftForge.EVENT_BUS.register(this);
-		MinecraftForge.EVENT_BUS.addListener((Consumer<PotionToFluidEvent>) event -> {
-			if (event.getPotion() == SPotions.PURIFIED_WATER) {
-				event.setFluid(SFluids.PURIFIED_WATER);
-				event.setFlowingFluid(SFluids.FLOWING_PURIFIED_WATER);
-			}
-		});
-		MinecraftForge.EVENT_BUS.addListener((Consumer<FluidToPotionEvent.FromStateEvent>) event -> {
-			if (event.getFluid().getType() instanceof PurifiedWaterFluid) {
-				event.setPotion(SPotions.PURIFIED_WATER);
-			}
-		});
-		isPrimalWinterLoaded = ModList.get().isLoaded("primalwinter");
+	static boolean isPrimalWinterLoaded() {
+		return Platform.isModLoaded("primalwinter");
 	}
 	
-	@Override
-	public void onModConstruct() {
-		new FluidSTags();
-		new ItemSTags();
-		if (isCombatLoaded())SSpells.registerAll(eventBus());
-		if (isOriginsLoaded())OriginsCompat.initOriginsPatcher();
+	default void onModConstruct() {
+		if (isCombatLoaded()) SSpells.registerAll();
+		if (isOriginsLoaded()) OriginsCompat.initOriginsPatcher();
 		BlockPropertyHandlerImpl.init();
 	}
 	
-	@Override
-	public void onModStartup() {
+	default void onModStartup() {
 		SCauldronInteraction.bootStrap();
 		BrewingRecipes.addBrewingRecipes();
 		CGameRules.init();
 
-		for(Item item : ForgeRegistries.ITEMS) {
+		for(Map.Entry<ResourceKey<Item>, Item> entry : MANAGER.get().get(Registries.ITEM).entrySet()) {
+			var item = entry.getValue();
+
 			if (item.isEdible())
-				DataMaps.Server.defaultFood.put(ForgeRegistries.ITEMS.getKey(item), item.getFoodProperties());
+				DataMaps.Server.defaultFood.put(entry.getKey().location(), item.getFoodProperties());
 		}
 	}
 	
-	@Override
-	public void onModStartupInClient() {
+	default void onModStartupInClient() {
 		RenderType frendertype = RenderType.translucent();
 		ItemBlockRenderTypes.setRenderLayer(SFluids.PURIFIED_WATER, frendertype);
 		ItemBlockRenderTypes.setRenderLayer(SFluids.FLOWING_PURIFIED_WATER, frendertype);
 	}
 	
-	@Override
-	public void setupConfigs(ConfigCollector collector) {
+	default void setupConfigs(ConfigCollector collector) {
 		collector.registerConfig(ServerConfig.class);
 		collector.registerConfig(CONFIG);
 		collector.registerConfig(HYGIENE_CONFIG); 
@@ -196,13 +169,11 @@ public class Survive extends MinecraftMod implements PacketHolder {
 		collector.registerConfig(STAMINA_CONFIG);
 	}
 	
-	@Override
-	public void setupCommands(CommandCollector collector) {
+	default void setupCommands(CommandCollector collector) {
 		NeedsCommand.register(collector.dispatcher());
 	}
 
-	@Override
-	public void setupRegistries(RegistryCollector collector) {
+	default void setupRegistries(RegistryCollector collector) {
 		collector.addRegistryHolder(SBlocks.class);
 		collector.addRegistryHolder(SFluids.class);
 		collector.addRegistryHolder(SItems.class);
@@ -218,8 +189,7 @@ public class Survive extends MinecraftMod implements PacketHolder {
 		}
 	}
 	
-	@Override
-	public void registerInserts(InsertCollector collector) {
+	default void registerInserts(InsertCollector collector) {
 		collector.addInsert(Inserts.LIVING_TICK, SurviveEvents::sendToClient);
 		collector.addInsert(Inserts.LIVING_TICK, SurviveEvents::updateEnvTemperature);
 		collector.addInsert(Inserts.PLAYER_RESTORE, SurviveEvents::restoreStats);
@@ -236,18 +206,22 @@ public class Survive extends MinecraftMod implements PacketHolder {
 			
 
 			BiFunction<String, Integer, LootPoolEntryContainer.Builder<?>> getInjectEntry = (name, weight) -> {
-				ResourceLocation table = Survive.getInstance().location("inject/" + name);
+				ResourceLocation table = location("inject/" + name);
 				return LootTableReference.lootTableReference(table).setWeight(weight);
 			};
 			
 			LOOT_MODIFIERS.forEach((pair) -> {
 				if(id.equals(pair.getKey())) {
 					pair.getValue().forEach((file) -> {
-						Survive.getInstance().debug("Injecting \""+file+"\" in "+pair.getKey());
-						lootTable.get().addPool(LootPool.lootPool()
+						debug("Injecting \"" + file + "\" in " +pair.getKey());
+
+						var lootTableInstance = lootTable.get();
+						lootTableInstance.pools = Arrays.copyOf(lootTableInstance.pools, lootTableInstance.pools.length + 1);
+						lootTableInstance.pools[lootTableInstance.pools.length - 1] = LootPool.lootPool()
 								.add(getInjectEntry.apply(file, 1))
 								.setBonusRolls(UniformGenerator.between(0.0F, 1.0F))
-								.name("survive_inject").build());
+								// .name("survive_inject")
+								.build();
 					});
 				}
 			});
@@ -262,14 +236,12 @@ public class Survive extends MinecraftMod implements PacketHolder {
 		});
 	}
 	
-	@Override
-	public void modifyDefaultEntityAttributes(DefaultAttributeModifier modifier) {
-		super.modifyDefaultEntityAttributes(modifier);
+	default void modifyDefaultEntityAttributes(DefaultAttributeModifier modifier) {
 		modifier.addToEntity(EntityType.PLAYER, SAttributes.COLD_RESISTANCE, SAttributes.HEAT_RESISTANCE, SAttributes.MAX_STAMINA);
 	}
 	
 	@Override
-	public void registerPackets(PacketCollector collector) {
+	default void registerPackets(PacketCollector collector) {
 		collector.registerServerboundPacket(location(""), ServerboundArmorStaminaPacket.class, (packetBuffer) -> {return new ServerboundArmorStaminaPacket(packetBuffer);});
 		collector.registerServerboundPacket(location(""), ServerboundThirstMovementPacket.class, (packetBuffer) -> {return new ServerboundThirstMovementPacket(packetBuffer);});
 		collector.registerServerboundPacket(location(""), ServerboundInteractWithWaterPacket.class, (packetBuffer) -> {return new ServerboundInteractWithWaterPacket(packetBuffer);});
@@ -282,37 +254,27 @@ public class Survive extends MinecraftMod implements PacketHolder {
 	}
 
 	//TODO: FInd Somewhere to put all these
-	public static void registerDrinkDataForItem(ResourceLocation location, FoodJsonHolder drinkData) {
+	static void registerDrinkDataForItem(ResourceLocation location, FoodJsonHolder drinkData) {
 		DataMaps.Server.consummableItem.put(location, drinkData);
 	}
-	public static void registerDrinkDataForPotion(ResourceLocation location, PotionJsonHolder consummableData) {
+	static void registerDrinkDataForPotion(ResourceLocation location, PotionJsonHolder consummableData) {
 		DataMaps.Server.potionDrink.put(location, consummableData);
 	}
-	public static void registerArmorTemperatures(ResourceLocation location, ArmorJsonHolder armorData) {
+	static void registerArmorTemperatures(ResourceLocation location, ArmorJsonHolder armorData) {
 		DataMaps.Server.armor.put(location, armorData);
 	}
-	public static void registerBlockTemperatures(ResourceLocation location, BlockTemperatureJsonHolder drinkData) {
+	static void registerBlockTemperatures(ResourceLocation location, BlockTemperatureJsonHolder drinkData) {
 		DataMaps.Server.blockTemperature.put(location, drinkData);
 	}
-	public static void registerEntityTemperatures(ResourceLocation location, EntityTemperatureJsonHolder drinkData) {
+	static void registerEntityTemperatures(ResourceLocation location, EntityTemperatureJsonHolder drinkData) {
 		DataMaps.Server.entityTemperature.put(location, drinkData);
 	}
-	public static void registerBiomeTemperatures(ResourceLocation location, BiomeJsonHolder biomeData) {
+	static void registerBiomeTemperatures(ResourceLocation location, BiomeJsonHolder biomeData) {
 		DataMaps.Server.biome.put(location, biomeData);
 	}
 
-	public void debug(Object message) {
-		if (CONFIG.debugMode)getLogger().debug(message);
-	}
-
-	public void clientRegistries(final FMLClientSetupEvent event)
-	{
-		event.enqueueWork(()->{
-			SItemProperties.registerAll();
-		});
-	}
 	
-	public static ItemStack convertToPlayerStatusBook(ItemStack stack) {
+	static ItemStack convertToPlayerStatusBook(ItemStack stack) {
 		ItemStack result = new ItemStack(Items.WRITTEN_BOOK);
 		if (stack.getTag() != null) {
 			result.setTag(stack.getTag().copy());
@@ -321,9 +283,8 @@ public class Survive extends MinecraftMod implements PacketHolder {
 		result.getTag().putInt("generation", 0);
 		return result;
 	}
-	
-	@Override
-	public void registerServerRelaodableResources(ReloadListeners reloadListener) {
+
+	default void registerServerReldableResources(ReloadListeners reloadListener) {
 		reloadListener.listenTo(consummableReloader);
 		reloadListener.listenTo(potionReloader);
 		reloadListener.listenTo(armorReloader);
@@ -332,14 +293,12 @@ public class Survive extends MinecraftMod implements PacketHolder {
 		reloadListener.listenTo(entityReloader);
 		reloadListener.listenTo(fluidReloader);
 	}
-	
-	@Override
-	public void registerCreativeTabs(CreativeTabBuilder builder) {
+
+	default void registerCreativeTabs(CreativeTabBuilder builder) {
 		builder.addTab("main_tab", SCreativeModeTab.TAB_MAIN);
 	}
 	
-	@Override
-	public void populateCreativeTabs(CreativeTabPopulator populator) {
+	default void populateCreativeTabs(CreativeTabPopulator populator) {
 		//Hygiene related
 		if (populator.getTab().getDisplayName().equals(SCreativeModeTab.TAB_MAIN.getDisplayName()) && Survive.HYGIENE_CONFIG.enabled) {
 			populator.addItems(HygieneItems.BATH_SPONGE);
@@ -399,15 +358,20 @@ public class Survive extends MinecraftMod implements PacketHolder {
 		
 	}
 
-	public static List<String> defaultDimensionMods() {
+	ResourceLocation location(String location);
+	Logger getLogger();
+
+	default void debug(Object message) {
+		if (CONFIG.debugMode) getLogger().debug(message);
+	}
+
+
+	static List<String> defaultDimensionMods() {
 		List<String> dims = new ArrayList<String>();
 		dims.add("minecraft:overworld,0.0");
 		dims.add("minecraft:the_nether,0.0");
 		dims.add("minecraft:the_end,0.0");
 		return dims;
 	}
-	
-	public static Survive getInstance() {
-		return instance;
-	}
+
 }

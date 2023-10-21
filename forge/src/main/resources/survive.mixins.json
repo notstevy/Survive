@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.stereowalker.survive.forge.mixins",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "Survive-refmap.json",
+  "mixins": [
+  ],
+  "client": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

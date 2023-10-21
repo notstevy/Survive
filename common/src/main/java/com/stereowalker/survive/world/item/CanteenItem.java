@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.stereowalker.survive.Survive;
 
+import com.stereowalker.survive.SurviveRegistry;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.ChatFormatting;
@@ -145,11 +146,11 @@ public class CanteenItem extends Item {
 	@Override
 	public InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, InteractionHand pHand) {
 		ItemStack stack = pPlayer.getItemInHand(pHand);
-		if (Survive.POTION_FLUID_MAP.containsKey(PotionUtils.getPotion(stack))) {
+		if (SurviveRegistry.POTION_FLUID_MAP.containsKey(PotionUtils.getPotion(stack))) {
 			if (getDrinksLeft(stack) < Survive.THIRST_CONFIG.canteen_fill_amount) {
 				HitResult raytraceresult = getPlayerPOVHitResult(pLevel, pPlayer, ClipContext.Fluid.SOURCE_ONLY);
 				BlockPos blockpos = ((BlockHitResult)raytraceresult).getBlockPos();
-				if (pLevel.getFluidState(blockpos).is(FluidTags.WATER) && Survive.POTION_FLUID_MAP.get(PotionUtils.getPotion(stack)).contains(pLevel.getFluidState(blockpos).getType())) {
+				if (pLevel.getFluidState(blockpos).is(FluidTags.WATER) && SurviveRegistry.POTION_FLUID_MAP.get(PotionUtils.getPotion(stack)).contains(pLevel.getFluidState(blockpos).getType())) {
 					setDrinksLeft(stack, Survive.THIRST_CONFIG.canteen_fill_amount);
 				}
 			}
@@ -163,7 +164,7 @@ public class CanteenItem extends Item {
 	@Override
 	public void appendHoverText(ItemStack pStack, Level worldIn, List<Component> pTooltip, TooltipFlag flagIn) {
 		pTooltip.add(Component.translatable("tooltip.drinks_left").append(": "+getDrinksLeft(pStack)).withStyle(ChatFormatting.AQUA));
-		if (Survive.POTION_FLUID_MAP.containsKey(PotionUtils.getPotion(pStack)))
+		if (SurviveRegistry.POTION_FLUID_MAP.containsKey(PotionUtils.getPotion(pStack)))
 			pTooltip.add(Component.translatable(PotionUtils.getPotion(pStack).getName(this.getDescriptionId()+".effect.")).withStyle(ChatFormatting.YELLOW));
 		else
 			pTooltip.add(Component.translatable(PotionUtils.getPotion(pStack).getName("item.minecraft.potion.effect.")).withStyle(ChatFormatting.GOLD));

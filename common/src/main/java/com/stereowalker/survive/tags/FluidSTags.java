@@ -10,9 +10,6 @@ import net.minecraft.world.level.material.Fluid;
 public class FluidSTags {
 	public static final TagKey<Fluid> PURIFIED_WATER = create("purified_water");
 
-	public FluidSTags() {
-	}
-
 	private static TagKey<Fluid> create(String pName) {
 		return TagKey.create(RegistryHelper.fluidKey(), new ResourceLocation(Survive.MOD_ID, pName));
 	}

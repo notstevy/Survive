@@ -9,10 +9,6 @@ import net.minecraft.world.item.Item;
 
 public class ItemSTags {
 	public static final TagKey<Item> ANIMAL_FAT = create(new ResourceLocation("animal_fat"));
-
-	public ItemSTags() {
-	}
-
 	private static TagKey<Item> create(String pName) {
 		return TagKey.create(RegistryHelper.itemKey(), new ResourceLocation(Survive.MOD_ID, pName));
 	}

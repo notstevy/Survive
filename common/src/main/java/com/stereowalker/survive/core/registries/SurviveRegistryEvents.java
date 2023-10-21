@@ -5,6 +5,7 @@ import java.util.List;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.stereowalker.survive.Survive;
+import com.stereowalker.survive.SurviveRegistry;
 import com.stereowalker.survive.client.particle.HygieneParticle;
 import com.stereowalker.survive.core.particles.SParticleTypes;
 import com.stereowalker.survive.world.entity.ai.attributes.SAttributes;
@@ -94,7 +95,7 @@ public class SurviveRegistryEvents
         }
 		new SLootItemConditions();
 		MobEffects.FIRE_RESISTANCE.addAttributeModifier(SAttributes.HEAT_RESISTANCE, "795606d6-4ac6-4ae7-8311-63ccdb293eb4", 5.0D, AttributeModifier.Operation.ADDITION);
-		Survive.POTION_FLUID_MAP = 
+		SurviveRegistry.POTION_FLUID_MAP =
 				new ImmutableMap.Builder<Potion, List<Fluid>>()
 				.put(Potions.WATER, Lists.newArrayList(Fluids.FLOWING_WATER, Fluids.WATER))
 				.put(SPotions.PURIFIED_WATER, Lists.newArrayList(SFluids.FLOWING_PURIFIED_WATER, SFluids.PURIFIED_WATER)).build();

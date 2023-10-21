@@ -1,12 +1,14 @@
 package com.stereowalker.survive.core;
 
 import com.stereowalker.survive.Survive;
+import com.stereowalker.survive.SurviveRegistry;
 import com.stereowalker.survive.needs.HygieneData;
 import com.stereowalker.survive.needs.NutritionData;
 import com.stereowalker.survive.needs.SleepData;
 import com.stereowalker.survive.needs.StaminaData;
 import com.stereowalker.survive.needs.TemperatureData;
 import com.stereowalker.survive.needs.WaterData;
+import com.stereowalker.survive.utils.PersistentEntity;
 import com.stereowalker.survive.world.entity.ai.attributes.SAttributes;
 
 import net.minecraft.nbt.CompoundTag;
@@ -139,19 +141,16 @@ public class SurviveEntityStats {
 		getModNBT(entity).putInt(append("WetTime"), wetTime);
 	}
 
-	public static boolean addWetTime(LivingEntity entity, int wetTime) {
-		CompoundTag compound = entity.getPersistentData();
-		if (compound != null) {
-			setWetTime(entity, getWetTime(entity)+wetTime);
-			if (getWetTime(entity) < 0) {
-				setWetTime(entity, 0);
-			}
-			if (getWetTime(entity) > 3600) {
-				setWetTime(entity, 3600);
-			}
-			return true;
+	public static void addWetTime(LivingEntity entity, int wetTime) {
+		CompoundTag compound = PersistentEntity.getPersistentData(entity);
+
+		setWetTime(entity, getWetTime(entity)+wetTime);
+		if (getWetTime(entity) < 0) {
+			setWetTime(entity, 0);
 		}
-		return false;
+		if (getWetTime(entity) > 3600) {
+			setWetTime(entity, 3600);
+		}
 	}
 	
 	public static void addStatsOnSpawn(ItemFrame frame) {
@@ -192,7 +191,7 @@ public class SurviveEntityStats {
 				}
 				if (!compound.contains(append("WetTime"))) {
 					setWetTime(player, 0);
-					Survive.getInstance().debug("Set " + name + "'s wet time to " + getWetTime(player));
+					SurviveRegistry.getInstance().debug("Set " + name + "'s wet time to " + getWetTime(player));
 				}
 			}
 		}
@@ -207,17 +206,18 @@ public class SurviveEntityStats {
 	}
 
 	public static CompoundTag getModNBT(Entity entity) {
-		return entity.getPersistentData().getCompound(getModDataString());
+		return PersistentEntity.getPersistentData(entity).getCompound(getModDataString());
 	}
 
 	public static CompoundTag getOrCreateModNBT(Entity entity) {
-		if (!entity.getPersistentData().contains(getModDataString(), 10)) {
-			entity.getPersistentData().put(getModDataString(), new CompoundTag());
+		var persistentData = PersistentEntity.getPersistentData(entity);
+		if (!persistentData.contains(getModDataString(), 10)) {
+			persistentData.put(getModDataString(), new CompoundTag());
 		}
-		return entity.getPersistentData().getCompound(getModDataString());
+		return persistentData.getCompound(getModDataString());
 	}
 
 	public static void setModNBT(CompoundTag nbt, Entity entity) {
-		entity.getPersistentData().put(getModDataString(), nbt);
+		PersistentEntity.getPersistentData(entity).put(getModDataString(), nbt);
 	}
 }

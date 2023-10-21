@@ -19,10 +19,16 @@ configurations {
     developmentFabric.extendsFrom common
 }
 
+repositories {
+    maven { url "https://modmaven.dev/" } // UnionLib
+    maven { url "https://www.cursemaven.com" }
+}
+
 dependencies {
     modImplementation "net.fabricmc:fabric-loader:${rootProject.fabricLoaderVersion}"
     modApi "net.fabricmc.fabric-api:fabric-api:${rootProject.fabricApiVersion}+${rootProject.modMinecraftVersion}"
     modApi "dev.architectury:architectury-fabric:${rootProject.architecturyVersion}"
+    modApi "com.stereowalker.unionlib:UnionLib:${rootProject.modMinecraftVersion}-${rootProject.unionLibVersion}-Fabric"
 
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) { transitive false }
