@@ -19,8 +19,13 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "net.examplemod.fabric.ExampleModFabric"
+      "com.stereowalker.survive.fabric.SurviveModFabric"
     ]
+  },
+  "custom": {
+    "loom:injected_interfaces": {
+      "net.minecraft.class_1297": [ "com.stereowalker.survive.fabric.utils.PersistentDataEntityStorage" ]
+    }
   },
   "mixins": [
     "survive.mixins.json",
